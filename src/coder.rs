@@ -1,4 +1,4 @@
-use crate::command::{commands::ACommand, commands::CCommand};
+use crate::command::CCommand;
 
 pub fn encode_computation_command(command: CCommand) -> String {
     let dest_binary_code = match command.dest.as_str() {
@@ -61,12 +61,7 @@ pub fn encode_computation_command(command: CCommand) -> String {
     command_binary_code
 }
 
-pub fn encode_address_command(command: ACommand) -> String {
-    match command {
-        ACommand::Address(i) => {
-            format!("{:0>16}", format!("{i:b}"))
-        },
-        _ => panic!("Symbol should be replaced with address"),
-    }
+pub fn encode_address_command(address: usize) -> String {
+    format!("{:0>16}", format!("{address:b}"))
 }
 

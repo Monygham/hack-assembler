@@ -1,11 +1,9 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
-use std::iter::IntoIterator;
 
 use crate::coder::{encode_address_command, encode_computation_command};
-use crate::command::commands::ACommand;
-use crate::command::Command;
+use crate::command::{ParsedLine, ParsedCommand, CCommand};
 
 pub struct Parser {
     path_to_asm: String,
@@ -56,64 +54,53 @@ impl Parser {
 impl Parser {
     fn parse_commands(&mut self) -> io::Result<()> {
         let preprocessed_lines = self.preprocessed_lines_iterator()?;
-        preprocessed_lines.for_each(|preprocessed_line| match Command::new(&preprocessed_line) {
-            Command::LCommand(command) => {
+        preprocessed_lines.for_each(|preprocessed_line| match ParsedLine::new(&preprocessed_line) {
+            ParsedLine::Label(label) => {
                 println!("{:}", preprocessed_line);
-                let label = command.label;
                 println!(
                     "L-command {} in line number {}",
                     label,
                     self.get_symbol(&label).unwrap()
                 );
             }
-            Command::ACommand(command) => {
+            ParsedLine::Address(address) => {
                 println!("{:}", preprocessed_line);
-                match command {
-                    ACommand::Address(i) => {
-                        println!("Address is {}", i);
-                    }
-                    ACommand::Symbol(ref s) => {
-                        self.insert_symbol(s.clone());
+                println!("Address is {:}", address);
+            }
+            ParsedLine::Symbol(symbol) => {
+                        self.insert_symbol(symbol.clone());
                         println!(
                             "Symbol {} alocates variable at address {}",
-                            s,
-                            self.get_symbol(&s).unwrap()
+                            symbol,
+                            self.get_symbol(&symbol).unwrap()
                         );
-                    }
-                };
-                let transformed_command = self.substitute_address(command);
-                println!("{:}", encode_address_command(transformed_command));
+                    
+                let address = self.eliminate_symbol(symbol);
+                println!("{:}", encode_address_command(address));
             }
-            Command::CCommand(command) => {
+            ParsedLine::Computation(command) => {
                 println!("{:}", preprocessed_line);
-                println!("{:}", command);
+                println!("dest is {}, comp is {}, jmp is {}", command.dest, command.comp, command.jmp);
                 println!("{:}", encode_computation_command(command));
             }
-            Command::Comment => {}
+            ParsedLine::Comment => {}
         });
         Ok(())
     }
 
-    fn substitute_address(&mut self, command: ACommand) -> ACommand {
-        match command {
-            ACommand::Address(_) => command,
-            ACommand::Symbol(s) => {
-                self.insert_symbol(s.clone());
-                let address = self.get_symbol(&s).unwrap();
-                ACommand::Address(address)
-            }
-        }
+    fn eliminate_symbol(&mut self, symbol: String) -> usize {
+            self.insert_symbol(symbol.clone());
+            self.get_symbol(&symbol).unwrap()
     }
 
     fn parse_labels(&mut self) -> io::Result<()> {
         let mut program_line_counter = 0;
         let preprocessed_lines = self.preprocessed_lines_iterator()?;
-        preprocessed_lines.for_each(|preprocessed_line| match Command::new(&preprocessed_line) {
-            Command::LCommand(command) => {
-                let label = command.label;
+        preprocessed_lines.for_each(|preprocessed_line| match ParsedLine::new(&preprocessed_line) {
+            ParsedLine::Label(label) => {
                 self.insert_label(label, program_line_counter);
             }
-            Command::Comment => {}
+            ParsedLine::Comment => {}
             _ => {
                 program_line_counter += 1;
             }
