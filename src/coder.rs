@@ -11,28 +11,18 @@ impl Coder {
     }
 
     pub fn assemble_binary_code(self) -> Vec<String> {
-        self.parsed_commands.into_iter().map(|parsed_command| {
-            match parsed_command {
+        self.parsed_commands
+            .into_iter()
+            .map(|parsed_command| match parsed_command {
                 ParsedCommand::Address(address) => Self::encode_address_command(address),
                 ParsedCommand::Computation(command) => Self::encode_computation_command(command),
-            }
-        }).collect()
+            })
+            .collect()
     }
 }
 
 impl Coder {
     fn encode_computation_command(command: CCommand) -> String {
-        let dest_binary_code = match command.dest.as_str() {
-            "null" => "000",
-            "M" => "001",
-            "D" => "010",
-            "MD" => "011",
-            "A" => "100",
-            "AM" => "101",
-            "AD" => "110",
-            "AMD" => "111",
-            _ => panic!("Incorrect destination"),
-        };
         let comp_binary_code = match command.comp.as_str() {
             "0" => "0101010",
             "1" => "0111111",
@@ -64,6 +54,17 @@ impl Coder {
             "D|M" => "1010101",
             _ => panic!("Incorrect computation"),
         };
+        let dest_binary_code = match command.dest.as_str() {
+            "null" => "000",
+            "M" => "001",
+            "D" => "010",
+            "MD" => "011",
+            "A" => "100",
+            "AM" => "101",
+            "AD" => "110",
+            "AMD" => "111",
+            _ => panic!("Incorrect destination"),
+        };
         let jmp_binary_code = match command.jmp.as_str() {
             "null" => "000",
             "JGT" => "001",
@@ -76,8 +77,8 @@ impl Coder {
             _ => panic!("Incorrect jump"),
         };
         let mut command_binary_code = "111".to_string();
-        command_binary_code.push_str(dest_binary_code);
         command_binary_code.push_str(comp_binary_code);
+        command_binary_code.push_str(dest_binary_code);
         command_binary_code.push_str(jmp_binary_code);
         command_binary_code
     }

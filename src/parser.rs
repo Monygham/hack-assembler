@@ -42,13 +42,6 @@ impl SymbolTable {
         }
     }
 
-    pub fn insert_symbol(&mut self, symbol: String) {
-        if let None = self.get_symbol(&symbol) {
-            self.table.insert(symbol, self.free_memory_address);
-            self.free_memory_address += 1;
-        }
-    }
-
     pub fn get_symbol(&self, symbol: &String) -> Option<usize> {
         self.table.get(symbol).copied()
     }
@@ -58,8 +51,18 @@ impl SymbolTable {
     }
 
     pub fn eliminate_symbol(&mut self, symbol: String) -> usize {
-        self.insert_symbol(symbol.clone());
+        if let None = self.get_symbol(&symbol) {
+            self.table.insert(symbol.clone(), self.free_memory_address);
+            self.free_memory_address += 1;
+        }
         self.get_symbol(&symbol).unwrap()
+    }
+
+    pub fn insert_symbol(&mut self, symbol: String) {
+        if let None = self.get_symbol(&symbol) {
+            self.table.insert(symbol.clone(), self.free_memory_address);
+            self.free_memory_address += 1;
+        }
     }
 }
 
@@ -90,7 +93,6 @@ impl Parser {
                         parsed_commands.push(ParsedCommand::Address(address));
                     }
                     ParsedLine::Symbol(symbol) => {
-                        self.symbol_table.insert_symbol(symbol.clone());
                         let address = self.symbol_table.eliminate_symbol(symbol);
                         parsed_commands.push(ParsedCommand::Address(address));
                     }
@@ -118,7 +120,7 @@ impl Parser {
             }
         });
     }
-    
+
     pub fn parse(&mut self) {
         self.preprocessed_lines
             .iter()
