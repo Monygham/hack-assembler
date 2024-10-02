@@ -24,7 +24,7 @@ fn parse_command_line_args() -> (String, String) {
     if !Path::new(&path_to_asm).is_file() {
         panic!("Sourcefile not found.");
     }
-    if !(Path::new(&path_to_asm).extension().unwrap().to_str() == Some("asm")) {
+    if Path::new(&path_to_asm).extension().unwrap().to_str() != Some("asm") {
         panic!(
             "Sourcefile found but has incorrect extension. Required {}",
             ".asm"
@@ -77,11 +77,9 @@ fn write_binary_code_to_file(binary_code: Vec<String>, path_to_binary: String) -
 
 fn main() -> io::Result<()> {
     let (path_to_asm, path_to_hack) = parse_command_line_args();
-    // let path_to_asm = "/home/lkomputer/Documents/Code/nand2tetris/projects/6/pong/Pong.asm";
     let lines_in_sourcecode = lines_in_sourcecode(&path_to_asm);
     let mut parser = Parser::new(lines_in_sourcecode);
     parser.parse_labels();
-    // parser.parse();
     let parsed_commands = parser.parse_commands();
     let coder = Coder::new(parsed_commands);
     let binary_code = coder.assemble_binary_code();

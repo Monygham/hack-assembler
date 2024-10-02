@@ -17,9 +17,8 @@ pub struct CCommand {
     pub jmp: String,
 }
 
-
 impl ParsedLine {
-    pub fn new(preprocessed_line: &String) -> Self {
+    pub fn new(preprocessed_line: &str) -> Self {
         if Self::is_address_or_symbol(preprocessed_line) {
             Self::parse_address_or_symbol(preprocessed_line)
         } else if Self::is_computation(preprocessed_line) {
@@ -31,7 +30,7 @@ impl ParsedLine {
         }
     }
 
-    fn parse_address_or_symbol(preprocessed_line: &String) -> Self {
+    fn parse_address_or_symbol(preprocessed_line: &str) -> Self {
         let address_string = preprocessed_line[1..].to_string();
         match address_string.parse::<usize>() {
             Ok(i) => Self::Address(i),
@@ -39,7 +38,7 @@ impl ParsedLine {
         }
     }
 
-    fn parse_computation(preprocessed_line: &String) -> Self {
+    fn parse_computation(preprocessed_line: &str) -> Self {
         let mut assignement_idx: Option<usize> = None;
         if let Some(i) = preprocessed_line.find("=") {
             assignement_idx = Some(i);
@@ -73,7 +72,7 @@ impl ParsedLine {
         Self::Computation(CCommand { dest, comp, jmp })
     }
 
-    fn parse_label(preprocessed_line: &String) -> Self {
+    fn parse_label(preprocessed_line: &str) -> Self {
         let label_string = preprocessed_line
             .find(")")
             .map(|i| preprocessed_line[1..i].to_owned())
@@ -81,17 +80,17 @@ impl ParsedLine {
         Self::Label(label_string)
     }
 
-    fn is_address_or_symbol(preprocessed_line: &String) -> bool {
+    fn is_address_or_symbol(preprocessed_line: &str) -> bool {
         preprocessed_line.starts_with("@")
     }
 
-    fn is_computation(preprocessed_line: &String) -> bool {
+    fn is_computation(preprocessed_line: &str) -> bool {
         ["A", "M", "D", "0"]
             .iter()
             .any(|v| preprocessed_line.starts_with(v))
     }
 
-    fn is_label(preprocessed_line: &String) -> bool {
+    fn is_label(preprocessed_line: &str) -> bool {
         preprocessed_line.starts_with("(")
     }
 }

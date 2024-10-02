@@ -1,9 +1,5 @@
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::{self, BufRead, BufReader};
-
-use crate::coder::{encode_address_command, encode_computation_command};
-use crate::command::{CCommand, ParsedCommand, ParsedLine};
+use crate::command::{ParsedCommand, ParsedLine};
 
 struct SymbolTable {
     table: HashMap<String, usize>,
@@ -51,18 +47,11 @@ impl SymbolTable {
     }
 
     pub fn eliminate_symbol(&mut self, symbol: String) -> usize {
-        if let None = self.get_symbol(&symbol) {
+        if self.get_symbol(&symbol).is_none() {
             self.table.insert(symbol.clone(), self.free_memory_address);
             self.free_memory_address += 1;
         }
         self.get_symbol(&symbol).unwrap()
-    }
-
-    pub fn insert_symbol(&mut self, symbol: String) {
-        if let None = self.get_symbol(&symbol) {
-            self.table.insert(symbol.clone(), self.free_memory_address);
-            self.free_memory_address += 1;
-        }
     }
 }
 
@@ -88,7 +77,7 @@ impl Parser {
         self.preprocessed_lines
             .iter()
             .for_each(
-                |preprocessed_line| match ParsedLine::new(&preprocessed_line) {
+                |preprocessed_line| match ParsedLine::new(preprocessed_line) {
                     ParsedLine::Address(address) => {
                         parsed_commands.push(ParsedCommand::Address(address));
                     }
@@ -109,7 +98,7 @@ impl Parser {
         let mut program_line_counter = 0;
         let preprocessed_lines_iter = self.preprocessed_lines.iter();
         preprocessed_lines_iter.for_each(|preprocessed_line| {
-            match ParsedLine::new(&preprocessed_line) {
+            match ParsedLine::new(preprocessed_line) {
                 ParsedLine::Label(label) => {
                     self.symbol_table.insert_label(label, program_line_counter);
                 }
@@ -120,51 +109,10 @@ impl Parser {
             }
         });
     }
-
-    pub fn parse(&mut self) {
-        self.preprocessed_lines
-            .iter()
-            .for_each(
-                |preprocessed_line| match ParsedLine::new(&preprocessed_line) {
-                    ParsedLine::Label(label) => {
-                        println!("{:}", preprocessed_line);
-                        println!(
-                            "L-command {} in line number {}",
-                            label,
-                            self.symbol_table.get_symbol(&label).unwrap()
-                        );
-                    }
-                    ParsedLine::Address(address) => {
-                        println!("{:}", preprocessed_line);
-                        println!("Address is {:}", address);
-                    }
-                    ParsedLine::Symbol(symbol) => {
-                        self.symbol_table.insert_symbol(symbol.clone());
-                        println!(
-                            "Symbol {} alocates variable at address {}",
-                            symbol,
-                            self.symbol_table.get_symbol(&symbol).unwrap()
-                        );
-
-                        let address = self.symbol_table.eliminate_symbol(symbol);
-                        println!("{:}", encode_address_command(address));
-                    }
-                    ParsedLine::Computation(command) => {
-                        println!("{:}", preprocessed_line);
-                        println!(
-                            "dest is {}, comp is {}, jmp is {}",
-                            command.dest, command.comp, command.jmp
-                        );
-                        println!("{:}", encode_computation_command(command));
-                    }
-                    ParsedLine::Comment => {}
-                },
-            );
-    }
 }
 
 impl Parser {
-    fn preprocess_raw_line(raw_line: &String) -> String {
+    fn preprocess_raw_line(raw_line: &str) -> String {
         let mut preprocessed_line = raw_line.trim().to_string();
         if let Some(i) = preprocessed_line.find(" ") {
             preprocessed_line = preprocessed_line[..i].to_string();
